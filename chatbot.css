@@ -691,28 +691,5 @@ body.show-emoji-picker em-emoji-picker {
   body.show-chatbot {
     overflow: hidden;
   }
-}
-
-  .chat-sidebar {
-    width: 100%;
-    border-radius: 0;
-  }
-
-  .sidebar-backdrop {
-    border-radius: 0;
-  }
-
-  .chatbot-popup {
-    position: absolute;
-    width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    border-radius: 0;
-    transform: translateY(100%);
-  }
-
-  body.show-chatbot .chatbot-popup {
-    transform: translateY(0);
-  }
 
 }
