@@ -1,3 +1,11 @@
 node_modules/
 .env
 chats.json
+.vercel/
+public-url.txt
+tunnel-*.txt
+server-log.txt
+server.log
+tunnel-log.txt
+tunnel-out.txt
+tunnel-url.txt

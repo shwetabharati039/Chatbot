@@ -1,5 +1,4 @@
 const path = require("path");
-const fs = require("fs");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const express = require("express");
@@ -12,23 +11,21 @@ const API_KEY = process.env.OPENROUTER_API_KEY;
 const IS_PLACEHOLDER_KEY = API_KEY === "your_openrouter_api_key_here";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL = process.env.CHAT_MODEL || "openai/gpt-4o-mini";
-const CHATS_FILE = path.join(__dirname, "chats.json");
+
+const chatsStore = new Map();
+
+function readChats() {
+  return Array.from(chatsStore.values());
+}
+
+function writeChats(chatsArr) {
+  chatsStore.clear();
+  chatsArr.forEach(c => chatsStore.set(c.id, c));
+}
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname));
-function readChats() {
-  try {
-    if (!fs.existsSync(CHATS_FILE)) return [];
-    return JSON.parse(fs.readFileSync(CHATS_FILE, "utf-8"));
-  } catch {
-    return [];
-  }
-}
-
-function writeChats(chats) {
-  fs.writeFileSync(CHATS_FILE, JSON.stringify(chats, null, 2), "utf-8");
-}
 
 app.post("/api/chat", async (req, res) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -221,29 +218,31 @@ app.delete("/api/chats/:id", (req, res) => {
 });
 
 app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "chatbot.html"));
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.use(express.static(path.join(__dirname)));
+if (require.main === module) {
+  const HOST = "0.0.0.0";
 
-const HOST = "0.0.0.0";
+  app.listen(PORT, HOST, () => {
+    const { networkInterfaces } = require("os");
+    const nets = networkInterfaces();
+    const localIP = Object.values(nets)
+      .flat()
+      .find((n) => n.family === "IPv4" && !n.internal)?.address;
 
-app.listen(PORT, HOST, () => {
-  const { networkInterfaces } = require("os");
-  const nets = networkInterfaces();
-  const localIP = Object.values(nets)
-    .flat()
-    .find((n) => n.family === "IPv4" && !n.internal)?.address;
+    console.log(`Chatbot running at:`);
+    console.log(`  Local:   http://localhost:${PORT}`);
+    if (localIP) {
+      console.log(`  Network: http://${localIP}:${PORT}  <-- use this on your phone`);
+    }
+    console.log(`\nTo share publicly, open a NEW terminal and run:\n  npx lt --port ${PORT} --subdomain nova-assistant\n`);
+    if (!API_KEY) {
+      console.log(`  \u26a0 No OPENROUTER_API_KEY found. Create a .env file with your key.`);
+    } else if (IS_PLACEHOLDER_KEY) {
+      console.log(`  \u26a0 Replace the placeholder API key in .env with your real OpenRouter key.`);
+    }
+  });
+}
 
-  console.log(`Chatbot running at:`);
-  console.log(`  Local:   http://localhost:${PORT}`);
-  if (localIP) {
-    console.log(`  Network: http://${localIP}:${PORT}  <-- use this on your phone`);
-  }
-  console.log(`\nTo share publicly, open a NEW terminal and run:\n  npx lt --port ${PORT} --subdomain nova-assistant\n`);
-  if (!API_KEY) {
-    console.log(`  ⚠ No OPENROUTER_API_KEY found. Create a .env file with your key.`);
-  } else if (IS_PLACEHOLDER_KEY) {
-    console.log(`  ⚠ Replace the placeholder API key in .env with your real OpenRouter key.`);
-  }
-});
+module.exports = app;
