@@ -16,7 +16,7 @@ const CHATS_FILE = path.join(__dirname, "chats.json");
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
-
+app.use(express.static(__dirname));
 function readChats() {
   try {
     if (!fs.existsSync(CHATS_FILE)) return [];
