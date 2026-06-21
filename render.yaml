@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: nova-assistant
+    runtime: node
+    repo: https://github.com/shwetabharati039/Chatbot
+    branch: main
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CHAT_MODEL
+        value: openai/gpt-4o-mini
+      - key: VISION_MODEL
+        value: openai/gpt-4o-mini
+    healthCheckPath: /api/health
+    autoDeploy: true
