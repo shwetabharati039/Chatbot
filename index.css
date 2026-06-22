@@ -41,9 +41,6 @@ body {
 
 body.show-chatbot {
   overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
 }
 
 body.show-chatbot .page {
@@ -705,6 +702,7 @@ body.show-emoji-picker em-emoji-picker {
 
   body.show-chatbot {
     overflow: hidden;
+    position: relative;
   }
 
   body.show-chatbot .page {

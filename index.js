@@ -253,6 +253,7 @@ const closeChat = () => {
   document.body.classList.remove("show-chatbot");
   document.body.classList.remove("show-sidebar");
   window.scrollTo(0, scrollPos);
+  adjustMobileViewport();
 };
 
 const generateBotResponse = async (incomingMessageDiv, attachment = null) => {
@@ -486,8 +487,13 @@ const adjustMobileViewport = () => {
   if (!popup) return;
   const isOpen = document.body.classList.contains("show-chatbot");
   const isMobile = window.innerWidth <= 520;
-  if (isOpen && isMobile && window.visualViewport) {
-    popup.style.height = `${window.visualViewport.height}px`;
+  if (isOpen && isMobile) {
+    const vv = window.visualViewport;
+    if (vv) {
+      popup.style.height = `${vv.height}px`;
+    } else {
+      popup.style.height = `${window.innerHeight}px`;
+    }
   } else {
     popup.style.height = "";
   }
@@ -497,6 +503,20 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener("resize", adjustMobileViewport);
   window.visualViewport.addEventListener("scroll", adjustMobileViewport);
 }
+
+messageInput.addEventListener("focus", () => {
+  setTimeout(adjustMobileViewport, 350);
+});
+
+messageInput.addEventListener("blur", () => {
+  setTimeout(adjustMobileViewport, 300);
+});
+
+window.addEventListener("scroll", () => {
+  if (document.body.classList.contains("show-chatbot") && window.innerWidth <= 520) {
+    window.scrollTo(0, 0);
+  }
+}, { passive: false });
 
 updateSendButton();
 
