@@ -246,6 +246,7 @@ const openChat = () => {
   scrollPos = window.scrollY;
   document.body.classList.add("show-chatbot");
   messageInput.focus();
+  adjustMobileViewport();
 };
 
 const closeChat = () => {
@@ -479,6 +480,23 @@ const chatHeader = document.querySelector(".chat-header");
 chatBody.addEventListener("scroll", () => {
   chatHeader.classList.toggle("scrolled", chatBody.scrollTop > 2);
 });
+
+const adjustMobileViewport = () => {
+  const popup = document.querySelector(".chatbot-popup");
+  if (!popup) return;
+  const isOpen = document.body.classList.contains("show-chatbot");
+  const isMobile = window.innerWidth <= 520;
+  if (isOpen && isMobile && window.visualViewport) {
+    popup.style.height = `${window.visualViewport.height}px`;
+  } else {
+    popup.style.height = "";
+  }
+};
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", adjustMobileViewport);
+  window.visualViewport.addEventListener("scroll", adjustMobileViewport);
+}
 
 updateSendButton();
 
