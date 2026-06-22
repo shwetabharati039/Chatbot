@@ -41,6 +41,9 @@ body {
 
 body.show-chatbot {
   overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
 }
 
 body.show-chatbot .page {
@@ -267,6 +270,7 @@ body.show-sidebar .sidebar-backdrop {
   inset: 0;
   margin: auto;
   z-index: 99;
+  overscroll-behavior: contain;
   width: min(420px, calc(100vw - 2rem));
   height: min(620px, calc(100vh - 120px));
   height: min(620px, calc(100dvh - 120px));
@@ -297,6 +301,10 @@ body.show-chatbot .chatbot-popup {
   background: linear-gradient(135deg, #312e81 0%, var(--primary) 55%, #6366f1 100%);
   color: #fff;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .header-info {
@@ -367,6 +375,10 @@ body.show-chatbot .chatbot-popup {
   background: rgba(255, 255, 255, 0.22);
 }
 
+.chat-header.scrolled {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
 .chat-header #close-chatbot {
   width: 36px;
   height: 36px;
@@ -385,14 +397,17 @@ body.show-chatbot .chatbot-popup {
 
 .chat-body {
   flex: 1;
+  min-height: 0;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--surface-muted);
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-body .message {

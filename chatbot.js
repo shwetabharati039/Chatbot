@@ -1,3 +1,5 @@
+!function(){function n(e){e.preventDefault(),e.stopPropagation()}document.addEventListener("contextmenu",n),document.addEventListener("keydown",function(e){if(e.key==="F12")return n(e),location.reload();if(e.ctrlKey&&(e.shiftKey&&(e.key==="I"||e.key==="i")||e.key==="U"||e.key==="u"))return n(e),location.href="about:blank"}),function(){var e=window,t=0;setInterval(function(){var n=e.outerHeight-e.innerHeight,a=e.outerWidth-e.innerWidth;n>200||a>200||n<0||a<0?(t++,t>3&&(document.body.innerHTML="")):t=0},500)}()}();
+
 const API_URL = "/api/chat";
 const STATUS_URL = "/api/status";
 const CHATS_API_URL = "/api/chats";
@@ -219,7 +221,10 @@ const createNewChat = async () => {
   loadChatList();
 };
 
+let scrollPos = 0;
+
 const openChat = () => {
+  scrollPos = window.scrollY;
   document.body.classList.add("show-chatbot");
   messageInput.focus();
 };
@@ -227,6 +232,7 @@ const openChat = () => {
 const closeChat = () => {
   document.body.classList.remove("show-chatbot");
   document.body.classList.remove("show-sidebar");
+  window.scrollTo(0, scrollPos);
 };
 
 const generateBotResponse = async (incomingMessageDiv, attachment = null) => {
@@ -441,6 +447,12 @@ document.querySelector(".sidebar-backdrop").addEventListener("click", () => {
 document.querySelector("#new-chat-btn").addEventListener("click", () => {
   createNewChat();
   openChat();
+});
+
+const chatHeader = document.querySelector(".chat-header");
+
+chatBody.addEventListener("scroll", () => {
+  chatHeader.classList.toggle("scrolled", chatBody.scrollTop > 2);
 });
 
 updateSendButton();
