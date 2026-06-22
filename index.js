@@ -1,4 +1,4 @@
-!function(){function n(e){e.preventDefault(),e.stopPropagation()}document.addEventListener("contextmenu",n),document.addEventListener("keydown",function(e){if(e.key==="F12")return n(e),location.reload();if(e.ctrlKey&&(e.shiftKey&&(e.key==="I"||e.key==="i")||e.key==="U"||e.key==="u"))return n(e),location.href="about:blank"}),function(){var e=window,t=0;setInterval(function(){var n=e.outerHeight-e.innerHeight,a=e.outerWidth-e.innerWidth;n>200||a>200||n<0||a<0?(t++,t>3&&(document.body.innerHTML="")):t=0},500)}()}();
+
 
 const API_URL = "/api/chat";
 const STATUS_URL = "/api/status";
@@ -85,8 +85,14 @@ const clearFileAttachment = () => {
   updateSendButton();
 };
 
+const escapeHtml = (text) => {
+  const d = document.createElement("div");
+  d.textContent = text;
+  return d.innerHTML;
+};
+
 const formatReply = (text) => {
-  return text
+  return escapeHtml(text)
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br>");
 };
@@ -134,12 +140,6 @@ const renderChatList = (chats) => {
   });
 };
 
-const escapeHtml = (text) => {
-  const d = document.createElement("div");
-  d.textContent = text;
-  return d.innerHTML;
-};
-
 const loadChatList = async () => {
   try {
     const res = await fetch(CHATS_API_URL);
@@ -154,27 +154,38 @@ const loadChatList = async () => {
 const switchChat = async (id) => {
   await saveCurrentChat();
   currentChatId = id;
-  const res = await fetch(`${CHATS_API_URL}/${id}`);
-  const chat = await res.json();
-  conversationHistory.length = 0;
-  conversationHistory.push(...chat.messages);
-  clearChatBody();
-  chat.messages.forEach((msg) => {
-    if (msg.role === "user") {
-      const div = createMessageElement(
-        `<div class="message-content"><div class="message-text">${escapeHtml(msg.content)}</div></div>`,
-        "user-message"
-      );
-      chatBody.appendChild(div);
-    } else {
-      const div = createMessageElement(
-        `${BOT_AVATAR}<div class="message-content"><div class="message-text">${formatReply(msg.content)}</div></div>`,
-        "bot-message"
-      );
-      chatBody.appendChild(div);
-    }
-  });
-  scrollToBottom();
+  try {
+    const res = await fetch(`${CHATS_API_URL}/${id}`);
+    if (!res.ok) throw new Error("Failed to load chat");
+    const chat = await res.json();
+    if (!chat || !Array.isArray(chat.messages)) throw new Error("Invalid chat data");
+    conversationHistory.length = 0;
+    conversationHistory.push(...chat.messages);
+    clearChatBody();
+    chat.messages.forEach((msg) => {
+      if (msg.role === "user") {
+        const div = createMessageElement(
+          `<div class="message-content"><div class="message-text">${escapeHtml(msg.content)}</div></div>`,
+          "user-message"
+        );
+        chatBody.appendChild(div);
+      } else {
+        const div = createMessageElement(
+          `${BOT_AVATAR}<div class="message-content"><div class="message-text">${formatReply(msg.content)}</div></div>`,
+          "bot-message"
+        );
+        chatBody.appendChild(div);
+      }
+    });
+    scrollToBottom();
+  } catch {
+    clearChatBody();
+    const errDiv = createMessageElement(
+      `<div class="message-content"><div class="message-text error-text">Failed to load chat.</div></div>`,
+      "bot-message"
+    );
+    chatBody.appendChild(errDiv);
+  }
   document.body.classList.remove("show-sidebar");
   loadChatList();
 };
@@ -182,19 +193,27 @@ const switchChat = async (id) => {
 const saveCurrentChat = async () => {
   if (!currentChatId || !conversationHistory.length) return;
   const title = getChatTitle(conversationHistory);
-  await fetch(`${CHATS_API_URL}/${currentChatId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: conversationHistory, title }),
-  });
+  try {
+    await fetch(`${CHATS_API_URL}/${currentChatId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: conversationHistory, title }),
+    });
+  } catch {
+    /* silently fail - chat remains in memory */
+  }
 };
 
 const deleteChat = async (id) => {
-  await fetch(`${CHATS_API_URL}/${id}`, { method: "DELETE" });
-  if (currentChatId === id) {
-    currentChatId = null;
-    conversationHistory.length = 0;
-    clearChatBody();
+  try {
+    await fetch(`${CHATS_API_URL}/${id}`, { method: "DELETE" });
+    if (currentChatId === id) {
+      currentChatId = null;
+      conversationHistory.length = 0;
+      clearChatBody();
+    }
+  } catch {
+    /* silently fail */
   }
   loadChatList();
 };
@@ -237,6 +256,7 @@ const closeChat = () => {
 
 const generateBotResponse = async (incomingMessageDiv, attachment = null) => {
   const messageElement = incomingMessageDiv.querySelector(".message-text");
+  const chatIdAtSend = currentChatId;
   const payload = {
     message: userData.message,
     history: conversationHistory.slice(0, -1),
@@ -262,6 +282,8 @@ const generateBotResponse = async (incomingMessageDiv, attachment = null) => {
       throw new Error(data.error || "Something went wrong.");
     }
 
+    if (chatIdAtSend !== currentChatId) return;
+
     conversationHistory.push({ role: "assistant", content: data.reply });
     messageElement.innerHTML = formatReply(data.reply);
   } catch (error) {
@@ -270,7 +292,9 @@ const generateBotResponse = async (incomingMessageDiv, attachment = null) => {
   } finally {
     incomingMessageDiv.classList.remove("thinking");
     scrollToBottom();
-    await saveCurrentChat();
+    if (chatIdAtSend === currentChatId) {
+      await saveCurrentChat();
+    }
     loadChatList();
   }
 };
@@ -291,6 +315,7 @@ const sendMessage = async (text = messageInput.value.trim(), attachmentOverride 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: "New chat" }),
       });
+      if (!res.ok) throw new Error("Failed to create chat");
       const chat = await res.json();
       currentChatId = chat.id;
       loadChatList();
@@ -317,7 +342,7 @@ const sendMessage = async (text = messageInput.value.trim(), attachmentOverride 
   );
 
   outgoingMessageDiv.querySelector(".message-text").textContent =
-    text || "Analyze this image";
+    text || "Please analyze this image.";
   chatBody.appendChild(outgoingMessageDiv);
   scrollToBottom();
 
@@ -391,9 +416,9 @@ document.querySelectorAll(".quick-prompt").forEach((button) => {
   });
 });
 
-document.querySelector("#start-chat").addEventListener("click", () => {
+document.querySelector("#start-chat").addEventListener("click", async () => {
   if (conversationHistory.length) {
-    createNewChat();
+    await createNewChat();
   }
   openChat();
 });
@@ -444,8 +469,8 @@ document.querySelector(".sidebar-backdrop").addEventListener("click", () => {
   document.body.classList.remove("show-sidebar");
 });
 
-document.querySelector("#new-chat-btn").addEventListener("click", () => {
-  createNewChat();
+document.querySelector("#new-chat-btn").addEventListener("click", async () => {
+  await createNewChat();
   openChat();
 });
 

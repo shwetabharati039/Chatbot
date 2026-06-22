@@ -110,7 +110,7 @@ Rules:
         "X-Title": "AI Chatbot",
       },
       body: JSON.stringify({
-        model: image ? process.env.VISION_MODEL || "openai/gpt-4o-mini" : MODEL,
+        model: image ? process.env.VISION_MODEL || MODEL : MODEL,
         messages,
       }),
     });
@@ -155,7 +155,7 @@ app.get("/api/status", (_req, res) => {
     secure: true,
     apiConfigured: Boolean(process.env.OPENROUTER_API_KEY),
     model: MODEL,
-    visionModel: process.env.VISION_MODEL || "openai/gpt-4o-mini",
+    visionModel: process.env.VISION_MODEL || MODEL,
   });
 });
 
