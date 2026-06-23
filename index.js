@@ -55,7 +55,7 @@ const THINKING_HTML = `<div class="message-text">
 const WELCOME_HTML = `${BOT_AVATAR}<div class="message-content">
   <div class="message-text">Hello! I'm Nova. Ask me anything — I'm here to help.</div>
   <div class="quick-prompts">
-    <button type="button" class="quick-prompt" data-prompt="Summarize this topic in simple terms">Explain simply</button>
+    <button type="button" class="quick-prompt" data-prompt="Ask me which topic I want you to explain in simple terms">Explain simply</button>
     <button type="button" class="quick-prompt" data-prompt="Help me write a professional email">Draft an email</button>
     <button type="button" class="quick-prompt" data-prompt="Give me 5 creative project ideas">Get ideas</button>
   </div>
