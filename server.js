@@ -27,12 +27,20 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname));
 
+const AUTH_ERRORS = ["missing authentication header", "invalid api key", "unauthorized", "authentication failed"];
+
 app.post("/api/chat", async (req, res) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
     return res.status(500).json({
       error: "Server is missing OPENROUTER_API_KEY. Add it to your .env file.",
+    });
+  }
+
+  if (apiKey === "your_openrouter_api_key_here") {
+    return res.status(500).json({
+      error: "Please set a valid OpenRouter API key in the .env file.",
     });
   }
 
@@ -128,8 +136,11 @@ Rules:
     }
 
     if (!response.ok) {
-      const errorMessage =
-        data?.error?.message || data?.message || "Failed to get a response.";
+      const rawError = (data?.error?.message || data?.message || "").toLowerCase();
+      const isAuthError = AUTH_ERRORS.some(msg => rawError.includes(msg));
+      const errorMessage = isAuthError
+        ? "Invalid or missing API key. Check your OPENROUTER_API_KEY in .env."
+        : (data?.error?.message || data?.message || "Failed to get a response.");
       return res.status(response.status).json({ error: errorMessage });
     }
 
